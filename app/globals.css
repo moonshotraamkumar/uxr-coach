@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/* ─── Design tokens ─── */
+@theme inline {
+  /* Surfaces */
+  --color-canvas:  #FAF9F7;
+  --color-surface: #F4F1EC;
+  --color-border:  #E8E3DB;
+
+  /* Text (sage-tinted) */
+  --color-ink:    #252D2A;
+  --color-muted:  #5E7A6E;
+  --color-subtle: #8FB5A8;
+
+  /* Accent — sage green */
+  --color-sage:       #7C9E8C;
+  --color-sage-hover: #6A8D7B;
+  --color-sage-light: #EBF2EE;
+
+  /* Feedback amber */
+  --color-amber:       #C4953A;
+  --color-amber-light: #FDF6E7;
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  /* Animations */
+  --animate-fade-in:   fadeIn 0.4s ease-out forwards;
+  --animate-slide-up:  slideUp 0.3s ease-out forwards;
+  --animate-pulse-soft: pulseSoft 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ─── Keyframes ─── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseSoft {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 0.2; }
+}
+
+/* ─── Base styles ─── */
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Accordion helper ─── */
+.accordion-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+}
