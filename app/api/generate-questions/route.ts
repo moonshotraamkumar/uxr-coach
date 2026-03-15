@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   }
 
   const jd = jobDescription.slice(0, 4000);
-  const userPrompt = `Here is the job description:\n\n${jd}\n\nReturn a JSON object with two fields:\n1. "insights": 3-5 strings (no bullet character) — what will make a candidate stand out for THIS specific role. Be specific to the JD, not generic.\n2. "questions": exactly 5 interview questions (mix of craft and behavioral) with rubrics.\n\nJSON schema:\n{ "insights": [string], "questions": [{ "id": string, "type": "craft or behavioral", "text": string, "source": "ai", "rubric": [{ "competency": string, "whatGoodLooksLike": string, "seniorExample": string }] }] }\n\nOutput valid JSON only.`;
+  const userPrompt = `Here is the job description:\n\n${jd}\n\nReturn a JSON object with four fields:\n1. "title": the job title extracted from the JD (e.g. "Senior UX Researcher"). If not found, use "UX Researcher".\n2. "location": the location or work arrangement extracted from the JD (e.g. "San Francisco, CA", "Remote", "New York, NY (Hybrid)"). If not found, use null.\n3. "insights": 3-5 strings (no bullet character) — what will make a candidate stand out for THIS specific role. Be specific to the JD, not generic.\n4. "questions": exactly 5 interview questions (mix of craft and behavioral) with rubrics.\n\nJSON schema:\n{ "title": string, "location": string | null, "insights": [string], "questions": [{ "id": string, "type": "craft or behavioral", "text": string, "source": "ai", "rubric": [{ "competency": string, "whatGoodLooksLike": string, "seniorExample": string }] }] }\n\nOutput valid JSON only.`;
 
   let finalText = '';
 
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let parsed: { questions: Question[]; insights?: string[] };
+  let parsed: { questions: Question[]; insights?: string[]; title?: string; location?: string | null };
   try {
     const cleaned = finalText.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
     parsed = JSON.parse(cleaned);
@@ -94,6 +94,8 @@ export async function POST(req: NextRequest) {
     id: q.id || `q-${Date.now()}-${i}`,
   }));
   const insights: string[] = Array.isArray(parsed.insights) ? parsed.insights : [];
+  const title: string = parsed.title ?? '';
+  const location: string | null = parsed.location ?? null;
 
-  return NextResponse.json({ questions, insights });
+  return NextResponse.json({ questions, insights, title, location });
 }

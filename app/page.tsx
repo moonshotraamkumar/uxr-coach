@@ -17,6 +17,8 @@ export default function Home() {
   // Questions + insights
   const [questions, setQuestions] = useState<Question[]>([]);
   const [insights, setInsights] = useState<string[]>([]);
+  const [roleTitle, setRoleTitle] = useState<string>('');
+  const [roleLocation, setRoleLocation] = useState<string | null>(null);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
 
@@ -44,6 +46,8 @@ export default function Home() {
     setPhase('loading-questions');
     setQuestions([]);
     setInsights([]);
+    setRoleTitle('');
+    setRoleLocation(null);
     setAnswers({});
     setFeedbackMap({});
     setSelectedId(null);
@@ -65,6 +69,8 @@ export default function Home() {
 
       setQuestions(data.questions);
       setInsights(data.insights ?? []);
+      setRoleTitle(data.title ?? '');
+      setRoleLocation(data.location ?? null);
       setPhase('questions');
       // Don't auto-select first question — show insights first
     } catch {
@@ -128,6 +134,8 @@ export default function Home() {
     setPhase('input');
     setQuestions([]);
     setInsights([]);
+    setRoleTitle('');
+    setRoleLocation(null);
     setAnswers({});
     setFeedbackMap({});
     setSelectedId(null);
@@ -150,9 +158,9 @@ export default function Home() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr_360px] h-screen overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-[460px_1fr] h-screen overflow-hidden">
       {/* Left panel — question list */}
-      <aside className="border-r border-border overflow-y-auto bg-canvas">
+      <aside className="border-r border-border overflow-y-auto bg-slate-100">
         <QuestionList
           questions={questions}
           selectedId={selectedId}
@@ -162,68 +170,74 @@ export default function Home() {
         />
       </aside>
 
-      {/* Middle panel — question + answer + feedback */}
-      <section className="overflow-y-auto border-r border-border">
+      {/* Main panel — question + answer + feedback + rubric */}
+      <section className="overflow-y-auto">
         {selectedQuestion ? (
-          <div className="px-8 py-8 flex flex-col gap-6">
+          <div className="px-8 py-8 max-w-3xl mx-auto w-full flex flex-col gap-6">
             {/* Question text */}
-            <div>
-              <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
-                Question
-              </p>
-              <h2 className="text-3xl font-medium text-ink leading-snug">
+            <div className="max-w-2xl">
+              <span
+                className={`inline-block text-[11px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 ${
+                  selectedQuestion.type === 'craft'
+                    ? 'bg-sage-light text-sage'
+                    : 'bg-amber-light text-amber'
+                }`}
+              >
+                {selectedQuestion.type}
+              </span>
+              <h2 className="text-3xl font-semibold text-ink leading-snug">
                 {selectedQuestion.text}
               </h2>
             </div>
 
-            {/* Answer */}
-            <AnswerInput
-              questionId={selectedQuestion.id}
-              value={selectedAnswer}
-              onChange={handleAnswerChange}
-              onSubmit={handleGetFeedback}
-              loading={feedbackLoading[selectedQuestion.id] ?? false}
+            {/* Rubric — immediately below question */}
+            <RubricPanel
+              key={selectedQuestion.id}
+              rubric={selectedQuestion.rubric}
             />
+
+            {/* Separator before answer */}
+            <div className="border-t border-border" />
+
+            {/* Answer */}
+            <div className="max-w-2xl">
+              <AnswerInput
+                questionId={selectedQuestion.id}
+                value={selectedAnswer}
+                onChange={handleAnswerChange}
+                onSubmit={handleGetFeedback}
+                loading={feedbackLoading[selectedQuestion.id] ?? false}
+              />
+            </div>
 
             {/* Feedback error */}
             {feedbackError[selectedQuestion.id] && (
-              <ErrorState
-                message={feedbackError[selectedQuestion.id]!}
-                onRetry={() =>
-                  setFeedbackError((prev) => ({ ...prev, [selectedQuestion.id]: null }))
-                }
-              />
+              <div className="max-w-2xl">
+                <ErrorState
+                  message={feedbackError[selectedQuestion.id]!}
+                  onRetry={() =>
+                    setFeedbackError((prev) => ({ ...prev, [selectedQuestion.id]: null }))
+                  }
+                />
+              </div>
             )}
 
             {/* Feedback */}
-            {selectedFeedback && <FeedbackPanel feedback={selectedFeedback} />}
+            {selectedFeedback && (
+              <div className="max-w-2xl">
+                <FeedbackPanel feedback={selectedFeedback} />
+              </div>
+            )}
           </div>
         ) : (
-          <div className="px-8 py-8">
-            <RoleInsights insights={insights} />
+          <div className="px-8 py-8 max-w-2xl mx-auto w-full">
+            <RoleInsights insights={insights} title={roleTitle} location={roleLocation} />
             {!insights.length && (
               <p className="text-muted text-sm mt-8 text-center">Select a question to begin</p>
             )}
           </div>
         )}
       </section>
-
-      {/* Right panel — rubric */}
-      <aside className="overflow-y-auto bg-canvas">
-        {selectedQuestion ? (
-          <div className="px-5 py-8">
-            <RubricPanel
-              key={selectedQuestion.id}
-              rubric={selectedQuestion.rubric}
-            />
-          </div>
-        ) : (
-          <div className="px-5 py-8">
-            <p className="text-xs font-semibold text-muted uppercase tracking-wider">Rubric</p>
-            <p className="text-sm text-subtle mt-3">Select a question to see the rubric.</p>
-          </div>
-        )}
-      </aside>
     </div>
   );
 }
