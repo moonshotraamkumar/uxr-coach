@@ -15,12 +15,12 @@ export function RubricPanel({ rubric }: RubricPanelProps) {
       <div className="px-5 py-4 flex flex-col gap-5">
         {rubric.map((item, i) => (
           <div key={i} className="flex flex-col gap-1.5">
-            <p className="text-sm font-semibold text-sage uppercase tracking-wider">
+            <p className="text-base font-semibold text-sage uppercase tracking-wider">
               {item.competency}
             </p>
-            <p className="text-xl text-ink leading-relaxed">{item.whatGoodLooksLike}</p>
+            <p className="text-2xl text-ink leading-relaxed">{item.whatGoodLooksLike}</p>
             <div className="pl-3 border-l-2 border-sage-light mt-1">
-              <p className="text-lg text-muted italic leading-relaxed">
+              <p className="text-xl text-muted italic leading-relaxed">
                 &ldquo;{item.seniorExample}&rdquo;
               </p>
             </div>
