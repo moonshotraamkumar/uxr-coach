@@ -7,14 +7,16 @@ import { QuestionList } from '@/components/QuestionList';
 import { RubricPanel } from '@/components/RubricPanel';
 import { AnswerInput } from '@/components/AnswerInput';
 import { FeedbackPanel } from '@/components/FeedbackPanel';
+import { RoleInsights } from '@/components/RoleInsights';
 import { ErrorState } from '@/components/ErrorState';
 
 export default function Home() {
   // App phase
   const [phase, setPhase] = useState<AppPhase>('input');
 
-  // Questions
+  // Questions + insights
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [insights, setInsights] = useState<string[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
 
@@ -41,6 +43,7 @@ export default function Home() {
     setQuestionsError(null);
     setPhase('loading-questions');
     setQuestions([]);
+    setInsights([]);
     setAnswers({});
     setFeedbackMap({});
     setSelectedId(null);
@@ -61,10 +64,9 @@ export default function Home() {
       }
 
       setQuestions(data.questions);
+      setInsights(data.insights ?? []);
       setPhase('questions');
-      if (data.questions.length > 0) {
-        setSelectedId(data.questions[0].id);
-      }
+      // Don't auto-select first question — show insights first
     } catch {
       setQuestionsError('Something went wrong. Please check your connection and try again.');
       setPhase('input');
@@ -125,6 +127,7 @@ export default function Home() {
   function handleChangeJD() {
     setPhase('input');
     setQuestions([]);
+    setInsights([]);
     setAnswers({});
     setFeedbackMap({});
     setSelectedId(null);
@@ -159,7 +162,7 @@ export default function Home() {
         />
       </aside>
 
-      {/* Right panel — rubric + answer + feedback */}
+      {/* Right panel — insights / rubric + answer + feedback */}
       <section className="overflow-y-auto">
         {selectedQuestion ? (
           <div className="max-w-2xl mx-auto px-6 py-8 flex flex-col gap-6">
@@ -168,7 +171,7 @@ export default function Home() {
               <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
                 Question
               </p>
-              <h2 className="text-lg font-medium text-ink leading-snug">
+              <h2 className="text-xl font-medium text-ink leading-snug">
                 {selectedQuestion.text}
               </h2>
             </div>
@@ -177,7 +180,6 @@ export default function Home() {
             <RubricPanel
               key={selectedQuestion.id}
               rubric={selectedQuestion.rubric}
-
             />
 
             {/* Answer */}
@@ -203,8 +205,11 @@ export default function Home() {
             {selectedFeedback && <FeedbackPanel feedback={selectedFeedback} />}
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full text-muted text-sm">
-            Select a question to begin
+          <div className="max-w-2xl mx-auto px-6 py-8">
+            <RoleInsights insights={insights} />
+            {!insights.length && (
+              <p className="text-muted text-sm mt-8 text-center">Select a question to begin</p>
+            )}
           </div>
         )}
       </section>

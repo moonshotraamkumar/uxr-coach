@@ -18,6 +18,7 @@ export interface GenerateQuestionsRequest {
 
 export interface GenerateQuestionsResponse {
   questions: Question[];
+  insights: string[]; // 3–5 bullets on what will make a candidate stand out for this specific role
 }
 
 export interface FeedbackRequest {
@@ -27,9 +28,9 @@ export interface FeedbackRequest {
 }
 
 export interface FeedbackResponse {
-  whatLandedWell: string;
-  whatIsMissing: string;
-  howToStrengthen: string;
+  whatLandedWell: string[];
+  whatIsMissing: string[];
+  howToStrengthen: string[];
 }
 
 export type AppPhase = 'input' | 'loading-questions' | 'questions';

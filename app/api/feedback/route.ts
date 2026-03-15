@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { anthropic, FEEDBACK_SYSTEM_PROMPT } from '@/lib/anthropic';
+import { getAnthropic, isAnthropicConfigured, FEEDBACK_SYSTEM_PROMPT } from '@/lib/anthropic';
 import { FeedbackRequest, FeedbackResponse } from '@/lib/types';
 
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!isAnthropicConfigured()) {
     return NextResponse.json(
       { error: 'CONFIG_ERROR', message: 'API key not configured.' },
       { status: 500 }
@@ -44,14 +44,14 @@ export async function POST(req: NextRequest) {
     .join('\n\n');
 
   try {
-    const response = await anthropic.messages.create({
+    const response = await getAnthropic().messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       system: FEEDBACK_SYSTEM_PROMPT,
       messages: [
         {
           role: 'user',
-          content: `Question: ${question}\n\nRubric:\n${rubricText}\n\nCandidate answer:\n${answer}\n\nProvide feedback as JSON with keys: whatLandedWell, whatIsMissing, howToStrengthen.`,
+          content: `Question: ${question}\n\nRubric:\n${rubricText}\n\nCandidate answer:\n${answer}\n\nProvide feedback as JSON with keys: whatLandedWell, whatIsMissing, howToStrengthen. Each value must be an array of short bullet strings.`,
         },
       ],
     });

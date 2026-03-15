@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.1.0 — URL input (2026-03-14)
+
+### Added
+- Job posting URL input: paste a URL (Greenhouse, Lever, Ashby, company career pages) and click "Fetch job description" to auto-populate the JD field
+  - Server-side fetch via `/api/fetch-jd` (avoids CORS, strips HTML boilerplate)
+  - URL detection is automatic — pill appears when a single-line URL is pasted
+  - Graceful fallback: if the site blocks the request (e.g. LinkedIn login wall), a calm error message prompts the user to paste text instead
+  - Generate Questions stays disabled while a raw URL is in the field
+
+---
+
 ## v1.0.0 — MVP (2026-03-14)
 
 ### Added

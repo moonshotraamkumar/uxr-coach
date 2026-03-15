@@ -2,24 +2,32 @@
 
 /* ─── Design tokens ─── */
 @theme inline {
-  /* Surfaces */
-  --color-canvas:  #FAF9F7;
-  --color-surface: #F4F1EC;
-  --color-border:  #E8E3DB;
+  /* Surfaces — Stripe palette */
+  --color-canvas:  #FFFFFF;
+  --color-surface: #F6F9FC;
+  --color-border:  #E3E8EE;
 
-  /* Text (sage-tinted) */
-  --color-ink:    #252D2A;
-  --color-muted:  #5E7A6E;
-  --color-subtle: #8FB5A8;
+  /* Text — Stripe slate (WCAG AA on white) */
+  --color-ink:    #0A2540;
+  --color-muted:  #425466;
+  --color-subtle: #697386;
 
-  /* Accent — sage green */
-  --color-sage:       #7C9E8C;
-  --color-sage-hover: #6A8D7B;
-  --color-sage-light: #EBF2EE;
+  /* Accent — Stripe indigo (primary actions) */
+  --color-sage:       #635BFF;
+  --color-sage-hover: #5147E5;
+  --color-sage-light: #EEF2FF;
 
-  /* Feedback amber */
-  --color-amber:       #C4953A;
-  --color-amber-light: #FDF6E7;
+  /* Feedback: what's missing — rose */
+  --color-amber:       #BE123C;
+  --color-amber-light: #FFF1F2;
+
+  /* Feedback: what landed well — green */
+  --color-green:       #15803D;
+  --color-green-light: #F0FDF4;
+
+  /* Feedback: how to strengthen — amber/gold */
+  --color-gold:       #B45309;
+  --color-gold-light: #FFFBEB;
 
   /* Typography */
   --font-sans: "Inter", system-ui, sans-serif;
