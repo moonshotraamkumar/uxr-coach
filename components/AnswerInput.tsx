@@ -12,62 +12,80 @@ interface AnswerInputProps {
 
 export function AnswerInput({ questionId, value, onChange, onSubmit, loading }: AnswerInputProps) {
   const [isListening, setIsListening] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const baseValueRef = useRef('');
   const finalTranscriptRef = useRef('');
-
-  const canSubmit = value.trim().length >= 20 && !loading && !isListening;
+  const isListeningRef = useRef(false);
 
   const hasSpeechRecognition =
     typeof window !== 'undefined' &&
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
+  const canSubmit = value.trim().length >= 20 && !loading && !isListening;
 
   function startListening() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
 
-    const recognition: SpeechRecognition = new SR();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
     baseValueRef.current = value;
     finalTranscriptRef.current = '';
+    isListeningRef.current = true;
+    setIsListening(true);
+    setVoiceError(null);
 
-    recognition.onstart = () => setIsListening(true);
+    function createSession() {
+      const recognition: SpeechRecognition = new SR();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const r = event.results[i];
-        if (r.isFinal) {
-          finalTranscriptRef.current += r[0].transcript;
-        } else {
-          interim += r[0].transcript;
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let interim = '';
+        let finalChunk = '';
+        for (let i = 0; i < event.results.length; i++) {
+          const r = event.results[i];
+          if (r.isFinal) finalChunk += r[0].transcript;
+          else interim += r[0].transcript;
         }
-      }
-      const base = baseValueRef.current;
-      const spoken = finalTranscriptRef.current + interim;
-      const combined = base ? base.trimEnd() + ' ' + spoken.trimStart() : spoken;
-      onChange(questionId, combined);
-    };
+        if (finalChunk) finalTranscriptRef.current += finalChunk;
+        const spoken = finalTranscriptRef.current + interim;
+        const base = baseValueRef.current;
+        const combined = base ? base.trimEnd() + ' ' + spoken.trimStart() : spoken;
+        onChange(questionId, combined);
+      };
 
-    recognition.onend = () => {
-      setIsListening(false);
-      const base = baseValueRef.current;
-      const final = finalTranscriptRef.current;
-      const combined = base ? base.trimEnd() + ' ' + final.trimStart() : final;
-      onChange(questionId, combined.trim());
-    };
+      recognition.onend = () => {
+        if (isListeningRef.current) {
+          createSession();
+        } else {
+          setIsListening(false);
+        }
+      };
 
-    recognition.onerror = () => setIsListening(false);
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        if (event.error === 'no-speech') return;
+        isListeningRef.current = false;
+        setIsListening(false);
+        if (event.error === 'not-allowed') {
+          setVoiceError('Microphone access denied. Allow it in your browser settings and try again.');
+        } else if (event.error === 'audio-capture') {
+          setVoiceError('No microphone found. Connect one and try again.');
+        } else {
+          setVoiceError('Voice input unavailable.');
+        }
+      };
 
-    recognitionRef.current = recognition;
-    recognition.start();
+      recognitionRef.current = recognition;
+      recognition.start();
+    }
+
+    createSession();
   }
 
   function stopListening() {
+    isListeningRef.current = false;
     recognitionRef.current?.stop();
   }
 
@@ -95,6 +113,8 @@ export function AnswerInput({ questionId, value, onChange, onSubmit, loading }: 
           </div>
         )}
       </div>
+
+      {voiceError && <p className="text-xs text-amber">{voiceError}</p>}
 
       <div className="flex items-center justify-between">
         <p className="text-xs text-subtle">

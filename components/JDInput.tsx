@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { LoadingState } from './LoadingState';
 
 interface JDInputProps {
@@ -18,22 +18,10 @@ export function JDInput({ onGenerate, loading }: JDInputProps) {
   const [fetchingUrl, setFetchingUrl] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Voice
-  const [isListening, setIsListening] = useState(false);
-  const [voiceError, setVoiceError] = useState<string | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const baseValueRef = useRef('');
-  const finalTranscriptRef = useRef('');
-
   const charCount = jd.trim().length;
   const isShort = charCount > 0 && charCount < 300 && !looksLikeUrl(jd);
   const canGenerate = charCount >= 100 && !loading && !looksLikeUrl(jd);
   const showUrlPill = looksLikeUrl(jd) && !fetchingUrl;
-
-  const [hasSpeechRecognition, setHasSpeechRecognition] = useState(false);
-  useEffect(() => {
-    setHasSpeechRecognition('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
-  }, []);
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setJd(e.target.value);
@@ -65,76 +53,6 @@ export function JDInput({ onGenerate, loading }: JDInputProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (canGenerate) onGenerate(jd);
-  }
-
-  // ── Voice ──
-  const isListeningRef = useRef(false);
-
-  function startListening() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) return;
-
-    baseValueRef.current = jd;
-    finalTranscriptRef.current = '';
-    isListeningRef.current = true;
-    setIsListening(true);
-    setVoiceError(null);
-
-    function createSession() {
-      const recognition: SpeechRecognition = new SR();
-      recognition.continuous = false;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        let interim = '';
-        let finalChunk = '';
-        for (let i = 0; i < event.results.length; i++) {
-          const r = event.results[i];
-          if (r.isFinal) finalChunk += r[0].transcript;
-          else interim += r[0].transcript;
-        }
-        if (finalChunk) finalTranscriptRef.current += finalChunk;
-        const spoken = finalTranscriptRef.current + interim;
-        const base = baseValueRef.current;
-        const combined = base ? base.trimEnd() + ' ' + spoken.trimStart() : spoken;
-        setJd(combined);
-        setFetchError(null);
-      };
-
-      recognition.onend = () => {
-        if (isListeningRef.current) {
-          // auto-restart to keep listening
-          createSession();
-        } else {
-          setIsListening(false);
-        }
-      };
-
-      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        if (event.error === 'no-speech') return; // just restart
-        isListeningRef.current = false;
-        setIsListening(false);
-        if (event.error === 'not-allowed') {
-          setVoiceError('Microphone access denied. Allow it in your browser settings and try again.');
-        } else if (event.error === 'audio-capture') {
-          setVoiceError('No microphone found. Connect one and try again.');
-        } else {
-          setVoiceError('Voice input unavailable. Try pasting the job description instead.');
-        }
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    }
-
-    createSession();
-  }
-
-  function stopListening() {
-    isListeningRef.current = false;
-    recognitionRef.current?.stop();
   }
 
   return (
@@ -224,41 +142,10 @@ export function JDInput({ onGenerate, loading }: JDInputProps) {
                     <p className="text-xs text-muted">Fetching job description…</p>
                   </div>
                 )}
-
-                {isListening && (
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-amber-light text-amber text-xs font-medium px-2.5 py-1 rounded-lg border border-amber/30 pointer-events-none">
-                    <span
-                      className="w-1.5 h-1.5 rounded-full bg-amber"
-                      style={{ animation: 'pulseSoft 1s ease-in-out infinite' }}
-                    />
-                    Listening…
-                  </div>
-                )}
               </div>
 
-              {voiceError && (
-                <p className="text-xs text-amber">{voiceError}</p>
-              )}
-
               {/* Button row */}
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div className="flex items-center gap-2">
-                  {hasSpeechRecognition && (
-                    <button
-                      type="button"
-                      onClick={isListening ? stopListening : startListening}
-                      className={
-                        isListening
-                          ? 'rounded-xl px-4 py-2.5 text-base font-medium flex items-center gap-2 transition-colors border bg-amber-light text-amber border-amber/30'
-                          : 'rounded-xl px-4 py-2.5 text-base font-medium flex items-center gap-2 transition-colors border bg-surface text-muted border-border hover:border-sage hover:text-sage'
-                      }
-                    >
-                      <MicIcon animate={isListening} />
-                      {isListening ? 'Stop' : 'Voice'}
-                    </button>
-                  )}
-                </div>
-
+              <div className="flex items-center justify-end gap-4 flex-wrap">
                 <div className="flex items-center gap-4">
                   {fetchError ? (
                     <p className="text-xs text-amber">{fetchError}</p>
@@ -283,20 +170,5 @@ export function JDInput({ onGenerate, loading }: JDInputProps) {
         </div>
       </main>
     </div>
-  );
-}
-
-function MicIcon({ animate }: { animate: boolean }) {
-  return (
-    <svg
-      width="15" height="15" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-      style={animate ? { animation: 'pulseSoft 1s ease-in-out infinite' } : undefined}
-    >
-      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-      <line x1="12" y1="19" x2="12" y2="22" />
-      <line x1="8" y1="22" x2="16" y2="22" />
-    </svg>
   );
 }
