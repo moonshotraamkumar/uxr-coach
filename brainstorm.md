@@ -52,3 +52,14 @@
 ## Claude can decide
 - API design, component architecture
 - Rubric structure and competency taxonomy
+
+## Mobile design requirements
+- App must be fully mobile responsive
+- Use Tailwind mobile-first breakpoints (sm, md, lg)
+- Test every component at 375px width (iPhone SE minimum)
+- On mobile (< 768px): stack layout vertically —
+  questions on top, answer + feedback below
+- Use tabs on mobile to switch between questions
+  and answer/feedback panels
+- Touch targets minimum 44px height
+- No horizontal scrolling on any screen size
