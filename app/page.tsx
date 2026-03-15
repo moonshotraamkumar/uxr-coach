@@ -10,9 +10,14 @@ import { FeedbackPanel } from '@/components/FeedbackPanel';
 import { RoleInsights } from '@/components/RoleInsights';
 import { ErrorState } from '@/components/ErrorState';
 
+type InterviewMode = 'practice' | 'mock';
+
 export default function Home() {
   // App phase
   const [phase, setPhase] = useState<AppPhase>('input');
+
+  // Interview mode
+  const [mode, setMode] = useState<InterviewMode>('practice');
 
   // Questions + insights
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -83,6 +88,7 @@ export default function Home() {
 
   function handleSelectQuestion(id: string) {
     setSelectedId(id);
+    // Keep mode across questions so user doesn't have to re-toggle
   }
 
   function handleAnswerChange(id: string, value: string) {
@@ -174,27 +180,59 @@ export default function Home() {
       <section className="overflow-y-auto">
         {selectedQuestion ? (
           <div className="px-8 py-8 max-w-3xl mx-auto w-full flex flex-col gap-6">
-            {/* Question text */}
-            <div className="max-w-2xl">
-              <span
-                className={`inline-block text-[11px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 ${
-                  selectedQuestion.type === 'craft'
-                    ? 'bg-sage-light text-sage'
-                    : 'bg-amber-light text-amber'
-                }`}
-              >
-                {selectedQuestion.type}
-              </span>
-              <h2 className="text-3xl font-semibold text-ink leading-snug">
-                {selectedQuestion.text}
-              </h2>
+
+            {/* Mode toggle + question header */}
+            <div className="max-w-2xl flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <span
+                  className={`inline-block text-[11px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 ${
+                    selectedQuestion.type === 'craft'
+                      ? 'bg-sage-light text-sage'
+                      : 'bg-amber-light text-amber'
+                  }`}
+                >
+                  {selectedQuestion.type}
+                </span>
+                <h2 className="text-3xl font-semibold text-ink leading-snug">
+                  {selectedQuestion.text}
+                </h2>
+              </div>
+
+              {/* Practice / Mock toggle */}
+              <div className="flex shrink-0 mt-1 items-center bg-surface border border-border rounded-lg p-0.5 gap-0.5">
+                {(['practice', 'mock'] as InterviewMode[]).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setMode(m)}
+                    className={[
+                      'px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-150 capitalize',
+                      mode === m
+                        ? 'bg-white shadow-sm text-ink'
+                        : 'text-muted hover:text-ink',
+                    ].join(' ')}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Rubric — immediately below question */}
-            <RubricPanel
-              key={selectedQuestion.id}
-              rubric={selectedQuestion.rubric}
-            />
+            {/* Rubric — visible in practice always; in mock only after feedback */}
+            {(mode === 'practice' || (mode === 'mock' && selectedFeedback)) && (
+              <RubricPanel
+                key={selectedQuestion.id}
+                rubric={selectedQuestion.rubric}
+              />
+            )}
+
+            {/* Mock mode hint — shown before feedback */}
+            {mode === 'mock' && !selectedFeedback && (
+              <div className="max-w-2xl rounded-xl bg-amber-light border border-amber/20 px-5 py-4">
+                <p className="text-sm text-amber font-medium leading-relaxed">
+                  Mock mode — the rubric is hidden. Answer the question on your own, then get feedback to see how you did.
+                </p>
+              </div>
+            )}
 
             {/* Separator before answer */}
             <div className="border-t border-border" />
