@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { getGroq, isGroqConfigured, GROQ_MODEL } from '@/lib/groq';
 import { getAnthropic, isAnthropicConfigured, FEEDBACK_SYSTEM_PROMPT } from '@/lib/anthropic';
 import { FeedbackRequest, FeedbackResponse } from '@/lib/types';
 
 export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
-  if (!isAnthropicConfigured()) {
+  const useGroq = isGroqConfigured();
+  const useAnthropic = isAnthropicConfigured();
+
+  if (!useGroq && !useAnthropic) {
     return NextResponse.json(
       { error: 'CONFIG_ERROR', message: 'API key not configured.' },
       { status: 500 }
@@ -35,7 +39,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Build rubric context string
   const rubricText = rubric
     .map(
       (r) =>
@@ -43,47 +46,48 @@ export async function POST(req: NextRequest) {
     )
     .join('\n\n');
 
+  const userContent = `Question: ${question}\n\nRubric:\n${rubricText}\n\nCandidate answer:\n${answer}\n\nProvide feedback as JSON with keys: whatLandedWell, whatIsMissing, howToStrengthen. Each value must be an array of short bullet strings.`;
+
+  let text = '';
   try {
-    const response = await getAnthropic().messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1000,
-      system: FEEDBACK_SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: `Question: ${question}\n\nRubric:\n${rubricText}\n\nCandidate answer:\n${answer}\n\nProvide feedback as JSON with keys: whatLandedWell, whatIsMissing, howToStrengthen. Each value must be an array of short bullet strings.`,
-        },
-      ],
-    });
-
-    const text = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-      .map((b) => b.text)
-      .join('');
-
-    const cleaned = text
-      .replace(/^```json\n?/, '')
-      .replace(/\n?```$/, '')
-      .trim();
-
-    const feedback: FeedbackResponse = JSON.parse(cleaned);
-    return NextResponse.json(feedback);
+    if (useGroq) {
+      const response = await getGroq().chat.completions.create({
+        model: GROQ_MODEL,
+        max_tokens: 1000,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: FEEDBACK_SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+      });
+      text = response.choices[0]?.message?.content ?? '';
+    } else {
+      const response = await getAnthropic().messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1000,
+        system: FEEDBACK_SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userContent }],
+      });
+      text = response.content
+        .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+        .map((b) => b.text)
+        .join('');
+    }
   } catch (err) {
-    if (err instanceof Anthropic.RateLimitError) {
-      return NextResponse.json(
-        { error: 'RATE_LIMIT', message: 'Too many requests — please wait a moment and try again.' },
-        { status: 429 }
-      );
-    }
-    if (err instanceof SyntaxError) {
-      return NextResponse.json(
-        { error: 'PARSE_ERROR', message: 'Something went wrong. Please try again.' },
-        { status: 500 }
-      );
-    }
     console.error('feedback error:', err);
     return NextResponse.json(
       { error: 'API_ERROR', message: 'Something went wrong. Please try again.' },
+      { status: 500 }
+    );
+  }
+
+  try {
+    const cleaned = text.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
+    const feedback: FeedbackResponse = JSON.parse(cleaned);
+    return NextResponse.json(feedback);
+  } catch {
+    return NextResponse.json(
+      { error: 'PARSE_ERROR', message: 'Something went wrong. Please try again.' },
       { status: 500 }
     );
   }

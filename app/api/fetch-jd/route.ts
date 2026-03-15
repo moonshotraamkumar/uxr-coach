@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const maxDuration = 15;
 
 function extractText(html: string): string {
-  let text = html
+  const text = html
     // Remove entire blocks that are never JD content
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')

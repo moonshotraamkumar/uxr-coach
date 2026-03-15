@@ -150,7 +150,7 @@ export default function Home() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] h-screen overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr_360px] h-screen overflow-hidden">
       {/* Left panel — question list */}
       <aside className="border-r border-border overflow-y-auto bg-canvas">
         <QuestionList
@@ -162,25 +162,19 @@ export default function Home() {
         />
       </aside>
 
-      {/* Right panel — insights / rubric + answer + feedback */}
-      <section className="overflow-y-auto">
+      {/* Middle panel — question + answer + feedback */}
+      <section className="overflow-y-auto border-r border-border">
         {selectedQuestion ? (
-          <div className="max-w-2xl mx-auto px-6 py-8 flex flex-col gap-6">
+          <div className="px-8 py-8 flex flex-col gap-6">
             {/* Question text */}
             <div>
               <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
                 Question
               </p>
-              <h2 className="text-xl font-medium text-ink leading-snug">
+              <h2 className="text-3xl font-medium text-ink leading-snug">
                 {selectedQuestion.text}
               </h2>
             </div>
-
-            {/* Rubric */}
-            <RubricPanel
-              key={selectedQuestion.id}
-              rubric={selectedQuestion.rubric}
-            />
 
             {/* Answer */}
             <AnswerInput
@@ -205,7 +199,7 @@ export default function Home() {
             {selectedFeedback && <FeedbackPanel feedback={selectedFeedback} />}
           </div>
         ) : (
-          <div className="max-w-2xl mx-auto px-6 py-8">
+          <div className="px-8 py-8">
             <RoleInsights insights={insights} />
             {!insights.length && (
               <p className="text-muted text-sm mt-8 text-center">Select a question to begin</p>
@@ -213,6 +207,23 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {/* Right panel — rubric */}
+      <aside className="overflow-y-auto bg-canvas">
+        {selectedQuestion ? (
+          <div className="px-5 py-8">
+            <RubricPanel
+              key={selectedQuestion.id}
+              rubric={selectedQuestion.rubric}
+            />
+          </div>
+        ) : (
+          <div className="px-5 py-8">
+            <p className="text-xs font-semibold text-muted uppercase tracking-wider">Rubric</p>
+            <p className="text-sm text-subtle mt-3">Select a question to see the rubric.</p>
+          </div>
+        )}
+      </aside>
     </div>
   );
 }

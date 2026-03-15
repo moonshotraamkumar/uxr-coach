@@ -10,7 +10,7 @@ function BulletList({ items, dotColor }: { items: string[]; dotColor: string }) 
       {items.map((item, i) => (
         <li key={i} className="flex gap-3 items-start">
           <span className={`mt-[9px] w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
-          <span className="text-base text-ink leading-relaxed">{item}</span>
+          <span className="text-xl text-ink leading-relaxed">{item}</span>
         </li>
       ))}
     </ul>

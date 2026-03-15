@@ -14,7 +14,7 @@ export function RoleInsights({ insights }: RoleInsightsProps) {
         {insights.map((insight, i) => (
           <div key={i} className="flex gap-3">
             <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-sage shrink-0" />
-            <p className="text-sm text-ink leading-relaxed">{insight}</p>
+            <p className="text-lg text-ink leading-relaxed">{insight}</p>
           </div>
         ))}
       </div>

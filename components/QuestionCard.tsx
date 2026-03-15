@@ -52,7 +52,7 @@ export function QuestionCard({ question, isSelected, onClick, index }: QuestionC
       </div>
 
       {/* Question text */}
-      <p className="text-sm text-ink leading-snug line-clamp-2">{question.text}</p>
+      <p className="text-lg text-ink leading-snug line-clamp-2">{question.text}</p>
     </button>
   );
 }
