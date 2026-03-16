@@ -32,24 +32,25 @@ export function QuestionList({
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-4 pt-5 pb-3 flex items-center justify-between border-b border-border">
-        <span className="text-xs font-semibold text-muted uppercase tracking-wider">
+        <span className="text-xs font-bold text-ink uppercase tracking-widest">
           Questions
         </span>
         <button
           onClick={onChangeJD}
-          className="text-xs text-subtle hover:text-muted transition-colors underline underline-offset-2"
+          className="text-xs text-subtle hover:text-muted transition-colors"
         >
-          Change JD
+          ← New JD
         </button>
       </div>
 
       {/* Question groups */}
-      <div className="flex-1 overflow-y-auto px-2 py-3 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-5">
         {craft.length > 0 && (
           <div className="flex flex-col gap-1">
-            <p className="px-2 text-[10px] font-semibold uppercase tracking-wider text-subtle mb-1">
-              Craft
-            </p>
+            <div className="flex items-center gap-2 px-1 mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-sage">Craft</span>
+              <span className="text-[10px] text-subtle">{craft.length}</span>
+            </div>
             {craft.map((q, i) => (
               <QuestionCard
                 key={q.id}
@@ -64,9 +65,10 @@ export function QuestionList({
 
         {behavioral.length > 0 && (
           <div className="flex flex-col gap-1">
-            <p className="px-2 text-[10px] font-semibold uppercase tracking-wider text-subtle mb-1">
-              Behavioral
-            </p>
+            <div className="flex items-center gap-2 px-1 mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-amber">Behavioral</span>
+              <span className="text-[10px] text-subtle">{behavioral.length}</span>
+            </div>
             {behavioral.map((q, i) => (
               <QuestionCard
                 key={q.id}

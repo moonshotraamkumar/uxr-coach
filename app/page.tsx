@@ -10,13 +10,20 @@ import { FeedbackPanel } from '@/components/FeedbackPanel';
 import { RoleInsights } from '@/components/RoleInsights';
 import { ErrorState } from '@/components/ErrorState';
 
+type InterviewMode = 'practice' | 'mock';
+
 export default function Home() {
   // App phase
   const [phase, setPhase] = useState<AppPhase>('input');
 
+  // Interview mode
+  const [mode, setMode] = useState<InterviewMode>('practice');
+
   // Questions + insights
   const [questions, setQuestions] = useState<Question[]>([]);
   const [insights, setInsights] = useState<string[]>([]);
+  const [roleTitle, setRoleTitle] = useState<string>('');
+  const [roleLocation, setRoleLocation] = useState<string | null>(null);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [questionsError, setQuestionsError] = useState<string | null>(null);
 
@@ -44,6 +51,8 @@ export default function Home() {
     setPhase('loading-questions');
     setQuestions([]);
     setInsights([]);
+    setRoleTitle('');
+    setRoleLocation(null);
     setAnswers({});
     setFeedbackMap({});
     setSelectedId(null);
@@ -65,6 +74,8 @@ export default function Home() {
 
       setQuestions(data.questions);
       setInsights(data.insights ?? []);
+      setRoleTitle(data.title ?? '');
+      setRoleLocation(data.location ?? null);
       setPhase('questions');
       // Don't auto-select first question — show insights first
     } catch {
@@ -77,6 +88,7 @@ export default function Home() {
 
   function handleSelectQuestion(id: string) {
     setSelectedId(id);
+    // Keep mode across questions so user doesn't have to re-toggle
   }
 
   function handleAnswerChange(id: string, value: string) {
@@ -128,6 +140,8 @@ export default function Home() {
     setPhase('input');
     setQuestions([]);
     setInsights([]);
+    setRoleTitle('');
+    setRoleLocation(null);
     setAnswers({});
     setFeedbackMap({});
     setSelectedId(null);
@@ -150,9 +164,9 @@ export default function Home() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr_360px] h-screen overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-[460px_1fr] h-screen overflow-hidden">
       {/* Left panel — question list */}
-      <aside className="border-r border-border overflow-y-auto bg-canvas">
+      <aside className="border-r border-border overflow-y-auto bg-slate-100">
         <QuestionList
           questions={questions}
           selectedId={selectedId}
@@ -162,68 +176,106 @@ export default function Home() {
         />
       </aside>
 
-      {/* Middle panel — question + answer + feedback */}
-      <section className="overflow-y-auto border-r border-border">
+      {/* Main panel — question + answer + feedback + rubric */}
+      <section className="overflow-y-auto">
         {selectedQuestion ? (
-          <div className="px-8 py-8 flex flex-col gap-6">
-            {/* Question text */}
-            <div>
-              <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
-                Question
-              </p>
-              <h2 className="text-3xl font-medium text-ink leading-snug">
-                {selectedQuestion.text}
-              </h2>
+          <div className="px-8 py-8 max-w-3xl mx-auto w-full flex flex-col gap-6">
+
+            {/* Mode toggle + question header */}
+            <div className="max-w-2xl flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <span
+                  className={`inline-block text-[11px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 ${
+                    selectedQuestion.type === 'craft'
+                      ? 'bg-sage-light text-sage'
+                      : 'bg-amber-light text-amber'
+                  }`}
+                >
+                  {selectedQuestion.type}
+                </span>
+                <h2 className="text-3xl font-semibold text-ink leading-snug">
+                  {selectedQuestion.text}
+                </h2>
+              </div>
+
+              {/* Practice / Mock toggle */}
+              <div className="flex shrink-0 mt-1 items-center bg-surface border border-border rounded-lg p-0.5 gap-0.5">
+                {(['practice', 'mock'] as InterviewMode[]).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setMode(m)}
+                    className={[
+                      'px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-150 capitalize',
+                      mode === m
+                        ? 'bg-white shadow-sm text-ink'
+                        : 'text-muted hover:text-ink',
+                    ].join(' ')}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Answer */}
-            <AnswerInput
-              questionId={selectedQuestion.id}
-              value={selectedAnswer}
-              onChange={handleAnswerChange}
-              onSubmit={handleGetFeedback}
-              loading={feedbackLoading[selectedQuestion.id] ?? false}
-            />
-
-            {/* Feedback error */}
-            {feedbackError[selectedQuestion.id] && (
-              <ErrorState
-                message={feedbackError[selectedQuestion.id]!}
-                onRetry={() =>
-                  setFeedbackError((prev) => ({ ...prev, [selectedQuestion.id]: null }))
-                }
+            {/* Rubric — visible in practice always; in mock only after feedback */}
+            {(mode === 'practice' || (mode === 'mock' && selectedFeedback)) && (
+              <RubricPanel
+                key={selectedQuestion.id}
+                rubric={selectedQuestion.rubric}
               />
             )}
 
+            {/* Mock mode hint — shown before feedback */}
+            {mode === 'mock' && !selectedFeedback && (
+              <div className="max-w-2xl rounded-xl bg-amber-light border border-amber/20 px-5 py-4">
+                <p className="text-sm text-amber font-medium leading-relaxed">
+                  Mock mode — the rubric is hidden. Answer the question on your own, then get feedback to see how you did.
+                </p>
+              </div>
+            )}
+
+            {/* Separator before answer */}
+            <div className="border-t border-border" />
+
+            {/* Answer */}
+            <div className="max-w-2xl">
+              <AnswerInput
+                questionId={selectedQuestion.id}
+                value={selectedAnswer}
+                onChange={handleAnswerChange}
+                onSubmit={handleGetFeedback}
+                loading={feedbackLoading[selectedQuestion.id] ?? false}
+              />
+            </div>
+
+            {/* Feedback error */}
+            {feedbackError[selectedQuestion.id] && (
+              <div className="max-w-2xl">
+                <ErrorState
+                  message={feedbackError[selectedQuestion.id]!}
+                  onRetry={() =>
+                    setFeedbackError((prev) => ({ ...prev, [selectedQuestion.id]: null }))
+                  }
+                />
+              </div>
+            )}
+
             {/* Feedback */}
-            {selectedFeedback && <FeedbackPanel feedback={selectedFeedback} />}
+            {selectedFeedback && (
+              <div className="max-w-2xl">
+                <FeedbackPanel feedback={selectedFeedback} />
+              </div>
+            )}
           </div>
         ) : (
-          <div className="px-8 py-8">
-            <RoleInsights insights={insights} />
+          <div className="px-8 py-8 max-w-2xl mx-auto w-full">
+            <RoleInsights insights={insights} title={roleTitle} location={roleLocation} />
             {!insights.length && (
               <p className="text-muted text-sm mt-8 text-center">Select a question to begin</p>
             )}
           </div>
         )}
       </section>
-
-      {/* Right panel — rubric */}
-      <aside className="overflow-y-auto bg-canvas">
-        {selectedQuestion ? (
-          <div className="px-5 py-8">
-            <RubricPanel
-              key={selectedQuestion.id}
-              rubric={selectedQuestion.rubric}
-            />
-          </div>
-        ) : (
-          <div className="px-5 py-8">
-            <p className="text-xs font-semibold text-muted uppercase tracking-wider">Rubric</p>
-            <p className="text-sm text-subtle mt-3">Select a question to see the rubric.</p>
-          </div>
-        )}
-      </aside>
     </div>
   );
 }

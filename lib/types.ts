@@ -18,7 +18,9 @@ export interface GenerateQuestionsRequest {
 
 export interface GenerateQuestionsResponse {
   questions: Question[];
-  insights: string[]; // 3–5 bullets on what will make a candidate stand out for this specific role
+  insights: string[];      // 3–5 bullets on what will make a candidate stand out for this specific role
+  title: string;           // job title extracted from JD
+  location: string | null; // location / work arrangement extracted from JD
 }
 
 export interface FeedbackRequest {
